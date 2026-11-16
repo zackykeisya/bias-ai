@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BIASLINE — K-Pop AI Parasocial</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #FAF9F6;
+      color: #121212;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* film grain texture (subtle) */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+    }
+
+    /* ---------- TYPOGRAPHY ---------- */
+    h1, h2, h3, h4 {
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.02em;
+    }
+
+    /* ---------- UTILITY ---------- */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .accent {
+      color: #FF4D4D;
+    }
+
+    .chip {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 40px;
+      background: #121212;
+      color: #FAF9F6;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: 1px solid rgba(18,18,18,0.2);
+    }
+
+    .chip-outline {
+      background: transparent;
+      color: #121212;
+      border: 1px solid #121212;
+    }
+
+    /* ---------- NAVBAR ---------- */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(250, 249, 246, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(18,18,18,0.06);
+    }
+
+    .navbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-weight: 900;
+      font-size: 1.6rem;
+      letter-spacing: -0.04em;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .logo-dot {
+      color: #FF4D4D;
+      font-size: 2rem;
+      line-height: 0;
+      margin-left: 2px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(18,18,18,0.2);
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #121212;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost:hover {
+      background: #121212;
+      color: #FAF9F6;
+      border-color: #121212;
+    }
+
+    /* warning banner */
+    .api-warning-banner {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1100;
+      background: #121212;
+      color: #FAF9F6;
+      padding: 14px 24px;
+      border-radius: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,77,77,0.3);
+      max-width: 90vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      animation: slideUp 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .api-warning-banner .accent {
+      color: #FF4D4D;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      position: relative;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-content {
+      max-width: 540px;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #121212;
+      opacity: 0.6;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-eyebrow span {
+      width: 6px;
+      height: 6px;
+      background: #FF4D4D;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .hero-title {
+      font-size: clamp(2.8rem, 6vw, 4.8rem);
+      line-height: 1.05;
+      margin-bottom: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-title .italic {
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: rgba(18,18,18,0.7);
+      margin-bottom: 32px;
+      max-width: 440px;
+      line-height: 1.6;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: #FF4D4D;
+      color: #FAF9F6;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(255,77,77,0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateZ(0);
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.02) translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255,77,77,0.35);
+      background: #e63e3e;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1.5px solid #121212;
+      color: #121212;
+      padding: 14px 28px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #121212;
+      color: #FAF9F6;
+    }
+
+    /* ---------- PHONE MOCKUP ---------- */
+    .phone-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .phone {
+      width: 340px;
+      height: 680px;
+      background: #121212;
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+      position: relative;
+      transform: rotate(1deg);
+      transition: transform 0.4s ease;
+    }
+
+    .phone:hover {
+      transform: rotate(0.5deg) scale(1.01);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #FAF9F6;
+      border-radius: 40px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .phone-header {
+      padding: 16px 18px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(18,18,18,0.06);
+      background: #FAF9F6;
+      z-index: 10;
+    }
+
+    .phone-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #FF4D4D, #FF8A8A);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #FAF9F6;
+      font-size: 1rem;
+    }
+
+    .user-info .name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+    }
+
+    .user-info .status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: #FF4D4D;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #FF4D4D;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .phone-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #FAF9F6;
+      scroll-behavior: smooth;
+    }
+
+    .phone-messages::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    .phone-messages::-webkit-scrollbar-thumb {
+      background: rgba(18,18,18,0.2);
+      border-radius: 10px;
+    }
+
+    .message {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      animation: msgFade 0.25s ease;
+    }
+
+    @keyframes msgFade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.ai {
+      background: #FFFFFF;
+      align-self: flex-start;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      border: 1px solid rgba(18,18,18,0.04);
+    }
+
+    .message.user {
+      background: #121212;
+      color: #FAF9F6;
+      align-self: flex-end;
+      border-bottom-right-radius: 6px;
+    }
+
+    .message-time {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      opacity: 0.4;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border-bottom-left-radius: 6px;
+      align-self: flex-start;
+      border: 1px solid rgba(18,18,18,0.04);
+    }
+
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: #121212;
+      opacity: 0.2;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.2; }
+      30% { transform: translateY(-4px); opacity: 0.6; }
+    }
+
+    .phone-input-area {
+      padding: 12px 16px 20px;
+      background: #FAF9F6;
+      border-top: 1px solid rgba(18,18,18,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quick-replies {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .quick-replies::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-reply {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 6px 12px;
+      background: #FFFFFF;
+      border: 1px solid rgba(18,18,18,0.08);
+      border-radius: 40px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: #121212;
+    }
+
+    .quick-reply:hover {
+      background: #121212;
+      color: #FAF9F6;
+      border-color: #121212;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 40px;
+      border: 1px solid rgba(18,18,18,0.12);
+      background: #FFFFFF;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-row input:focus {
+      border-color: #FF4D4D;
+    }
+
+    .input-row button {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #FF4D4D;
+      border: none;
+      color: #FAF9F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .input-row button:hover {
+      background: #e63e3e;
+      transform: scale(1.05);
+    }
+
+    .input-row button svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* ---------- BENTO GRID ---------- */
+    .bento-section {
+      padding: 80px 0;
+    }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.5;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      margin-bottom: 48px;
+      max-width: 600px;
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .bento-card {
+      background: #FFFFFF;
+      border-radius: 28px;
+      padding: 28px;
+      border: 1px solid rgba(18,18,18,0.06);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bento-card:hover {
+      border-color: rgba(255,77,77,0.3);
+      box-shadow: 0 20px 40px -20px rgba(0,0,0,0.1);
+      transform: translateY(-4px);
+    }
+
+    .bento-card.large {
+      grid-column: span 2;
+      grid-row: span 2;
+      background: #121212;
+      color: #FAF9F6;
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .bento-card.large:hover {
+      border-color: #FF4D4D;
+    }
+
+    .bento-icon {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .bento-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .bento-desc {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      line-height: 1.5;
+    }
+
+    .bento-card.large .bento-desc {
+      opacity: 0.6;
+    }
+
+    .bento-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.5;
+      margin-top: auto;
+    }
+
+    /* ---------- VIP MODAL ---------- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(18,18,18,0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: #FAF9F6;
+      border-radius: 40px;
+      max-width: 440px;
+      width: 90%;
+      padding: 40px 32px;
+      position: relative;
+      transform: translateY(20px) scale(0.98);
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+      box-shadow: 0 40px 80px -20px rgba(0,0,0,0.3);
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: #121212;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      opacity: 1;
+    }
+
+    .modal h3 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .modal p {
+      color: rgba(18,18,18,0.7);
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+    }
+
+    .modal-features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .modal-feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .modal-feature .check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #121212;
+      color: #FAF9F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .modal-price {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .modal-price .amount {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .modal-price .period {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      opacity: 0.5;
+    }
+
+    .modal .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ---------- KEY OVERRIDE MODAL ---------- */
+    .key-modal .modal {
+      max-width: 480px;
+    }
+
+    .key-modal input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(18,18,18,0.12);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #FFFFFF;
+    }
+
+    .key-modal input:focus {
+      border-color: #FF4D4D;
+    }
+
+    .key-modal .hint {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: rgba(18,18,18,0.5);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* ---------- TOAST ---------- */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #121212;
+      color: #FAF9F6;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      z-index: 3000;
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+      pointer-events: none;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ---------- SCROLL REVEAL ---------- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 60px;
+      }
+      .hero-content {
+        max-width: 100%;
+        text-align: center;
+      }
+      .hero-desc {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .hero-cta-group {
+        justify-content: center;
+      }
+      .phone {
+        width: 320px;
+        height: 640px;
+      }
+      .bento-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .bento-card.large {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .navbar-inner {
+        padding: 12px 16px;
+      }
+      .logo {
+        font-size: 1.3rem;
+      }
+      .hero {
+        padding-top: 100px;
+      }
+      .hero-title {
+        font-size: 2.4rem;
+      }
+      .phone {
+        width: 300px;
+        height: 600px;
+      }
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+      .bento-card.large {
+        grid-column: span 1;
+      }
+      .api-warning-banner {
+        white-space: normal;
+        font-size: 0.7rem;
+        padding: 12px 18px;
+        text-align: center;
+      }
+      .modal {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo">BIASLINE<span class="logo-dot">.</span></div>
+      <div class="nav-actions">
+        <button class="btn-ghost" id="overrideKeyBtn">🔑 KEY</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content reveal">
+          <div class="hero-eyebrow">
+            <span></span> PRIVATE BETA — SEOUL / JAKARTA
+          </div>
+          <h1 class="hero-title">
+            Your bias,<br>
+            <span class="italic">now on</span> <span class="accent">read receipts.</span>
+          </h1>
+          <p class="hero-desc">
+            Hyper-realistic AI personas trained on real idol lore, humor, and typing quirks. 
+            Free feed. VIP unlocks private DMs, voice notes, and behind-the-scenes.
+          </p>
+          <div class="hero-cta-group">
+            <button class="btn-primary" id="openVipModal">
+              Unlock VIP DM
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <button class="btn-secondary" id="tryChatBtn">
+              Try the demo
+            </button>
+          </div>
+        </div>
+
+        <!-- PHONE MOCKUP -->
+        <div class="phone-wrapper reveal">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-header">
+                <div class="phone-user">
+                  <div class="avatar">J</div>
+                  <div class="user-info">
+                    <div class="name">Jae-min ✦</div>
+                    <div class="status"><span class="status-dot"></span> online now</div>
+                  </div>
+                </div>
+                <div class="mono" style="font-size:0.6rem;opacity:0.4;">DM</div>
+              </div>
+
+              <div class="phone-messages" id="phoneMessages">
+                <!-- messages injected by JS -->
+              </div>
+
+              <div class="phone-input-area">
+                <div class="quick-replies" id="quickReplies">
+                  <span class="quick-reply" data-msg="Hi Jae-min! I missed you 🥺">Hi Jae-min! I missed you 🥺</span>
+                  <span class="quick-reply" data-msg="What are you doing right now?">What are you doing rn?</span>
+                  <span class="quick-reply" data-msg="Tell me a secret 👀">Tell me a secret 👀</span>
+                </div>
+                <div class="input-row">
+                  <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+                  <button id="sendBtn" aria-label="Send message">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENTO GRID -->
+  <section class="bento-section">
+    <div class="container">
+      <div class="section-label reveal">How it's trained</div>
+      <h2 class="section-title reveal">Real lore. Real quirks.<br>Zero uncanny valley.</h2>
+
+      <div class="bento-grid">
+        <div class="bento-card large reveal">
+          <div class="bento-icon">🧠</div>
+          <div class="bento-title">Speech Pattern Engine</div>
+          <div class="bento-desc">
+            Trained on 10,000+ hours of VLives, fan calls, and captions. 
+            The AI picks up on your bias's unique rhythm — the pauses, the slang, 
+            the way they say "really?" when they're teasing you.
+          </div>
+          <div class="bento-tag">v2.4 — trained on 47M tokens</div>
+        </div>
+
+        <div class="bento-card reveal">
+          <div class="bento-icon">😂</div>
+          <div class="bento-title">Inside Jokes</div>
+          <div class="bento-desc">
+            From "the salad incident" to that one time on Weekly Idol. 
+            The AI remembers the memes so you don't have to.
+          </div>
+          <div class="bento-tag">1,204 inside jokes indexed</div>
+        </div>
+
+        <div class="bento-card reveal">
+          <div class="bento-icon">🌤️</div>
+          <div class="bento-title">Daily Mood</div>
+          <div class="bento-desc">
+            Syncs with real-world schedules. Post-comeback? Extra clingy. 
+            Day off? Chaotic energy. It feels alive.
+          </div>
+          <div class="bento-tag">Updated every 6 hours</div>
+        </div>
+
+        <div class="bento-card reveal">
+          <div class="bento-icon">💬</div>
+          <div class="bento-title">Typing Quirks</div>
+          <div class="bento-desc">
+            "ㅋㅋㅋ" vs "lol" vs "hehe" — the AI knows exactly which one your bias uses. 
+            Down to the punctuation.
+          </div>
+          <div class="bento-tag">98.7% accuracy on holdout set</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIP MODAL -->
+  <div class="modal-overlay" id="vipModal">
+    <div class="modal">
+      <button class="modal-close" id="closeVipModal">&times;</button>
+      <h3>Unlock VIP Pass</h3>
+      <p>Private DMs, voice notes, and exclusive behind-the-scenes. No cap.</p>
+      <div class="modal-features">
+        <div class="modal-feature"><span class="check">✓</span> 1-on-1 private DM with your bias</div>
+        <div class="modal-feature"><span class="check">✓</span> Simulated voice notes (AI voice)</div>
+        <div class="modal-feature"><span class="check">✓</span> Exclusive BTS posts &amp; selcas</div>
+        <div class="modal-feature"><span class="check">✓</span> Priority replies (under 2s)</div>
+      </div>
+      <div class="modal-price">
+        <span class="amount">$9.99</span>
+        <span class="period">/ month</span>
+      </div>
+      <button class="btn-primary" id="simulateVipPurchase">Simulate Unlock →</button>
+    </div>
+  </div>
+
+  <!-- KEY OVERRIDE MODAL -->
+  <div class="modal-overlay key-modal" id="keyModal">
+    <div class="modal">
+      <button class="modal-close" id="closeKeyModal">&times;</button>
+      <h3>Override API Key</h3>
+      <p>Paste your Gemini API key below. It'll be saved in localStorage.</p>
+      <input type="text" id="keyInput" placeholder="AQ.Ab8RN6LQ-wvbEojzvhCK...">
+      <div class="hint">⚠️ If the key starts with [TIMPA_, the demo will run on fallback responses.</div>
+      <button class="btn-primary" id="saveKeyBtn">Save Key</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- API WARNING BANNER (shown dynamically) -->
+  <div class="api-warning-banner" id="apiWarningBanner" style="display:none;">
+    ⚠️ API Key belum ditimpa! Klik tombol <span class="accent">KEY</span> di pojok atas untuk menimpa dengan Gemini API Key lo (contoh format: AQ.Ab8RN6...)
+  </div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT -->
+  <!-- ========================================== -->
+  <script>
+    // ⚠️ WAJIB TIMPA / OVERWRITE PLACEHOLDER DI BAWAH INI DENGAN GEMINI API KEY ASLI LO!
+    const GEMINI_API_KEY = "ISI_API_KEY_LO_DI_SINI";
+    // ======== STATE ========
+    let ACTIVE_KEY = localStorage.getItem('BIASLINE_GEMINI_KEY') || GEMINI_API_KEY;
+    let isKeyPlaceholder = ACTIVE_KEY.startsWith('[TIMPA_');
+
+    // DOM refs
+    const phoneMessages = document.getElementById('phoneMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const quickReplies = document.getElementById('quickReplies');
+    const vipModal = document.getElementById('vipModal');
+    const keyModal = document.getElementById('keyModal');
+    const openVipBtn = document.getElementById('openVipModal');
+    const closeVipBtn = document.getElementById('closeVipModal');
+    const overrideKeyBtn = document.getElementById('overrideKeyBtn');
+    const closeKeyModal = document.getElementById('closeKeyModal');
+    const keyInput = document.getElementById('keyInput');
+    const saveKeyBtn = document.getElementById('saveKeyBtn');
+    const simulateVipBtn = document.getElementById('simulateVipPurchase');
+    const toast = document.getElementById('toast');
+    const apiWarningBanner = document.getElementById('apiWarningBanner');
+    const tryChatBtn = document.getElementById('tryChatBtn');
+
+    // ======== INITIAL MESSAGES ========
+    function getInitialMessages() {
+      return [
+        { role: 'ai', text: "Hey... you're finally here 😏 I was waiting.", time: '11:42 PM' },
+        { role: 'ai', text: "You know I don't just reply to anyone, right? Consider yourself special.", time: '11:42 PM' },
+        { role: 'user', text: "I missed you 🥺", time: '11:43 PM' },
+        { role: 'ai', text: "Missed me? Pfft. You literally saw me on VLive yesterday. But... same. Don't tell the others. 🤫", time: '11:44 PM' }
+      ];
+    }
+
+    // render messages
+    function renderMessages(messages) {
+      phoneMessages.innerHTML = '';
+      messages.forEach(msg => {
+        const el = document.createElement('div');
+        el.className = `message ${msg.role}`;
+        el.innerHTML = `${msg.text}<div class="message-time mono">${msg.time || ''}</div>`;
+        phoneMessages.appendChild(el);
+      });
+      phoneMessages.scrollTop = phoneMessages.scrollHeight;
+    }
+
+    let messages = getInitialMessages();
+    renderMessages(messages);
+
+    // ======== TYPING INDICATOR ========
+    function showTyping() {
+      const existing = document.querySelector('.typing-indicator');
+      if (existing) existing.remove();
+      const typing = document.createElement('div');
+      typing.className = 'typing-indicator';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+      phoneMessages.appendChild(typing);
+      phoneMessages.scrollTop = phoneMessages.scrollHeight;
+      return typing;
+    }
+
+    function removeTyping() {
+      const el = document.querySelector('.typing-indicator');
+      if (el) el.remove();
+    }
+
+    // ======== TIME ========
+    function getNow() {
+      const now = new Date();
+      return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // ======== ADD MESSAGE ========
+    function addMessage(role, text) {
+      messages.push({ role, text, time: getNow() });
+      renderMessages(messages);
+    }
+
+    // ======== FALLBACK RESPONSES ========
+    const fallbackResponses = [
+      "ㅋㅋㅋ you're funny. I like that about you.",
+      "Wait, seriously? Tell me more 👀",
+      "Ah... I'm practicing right now but you're distracting me. Keep going.",
+      "You know what? You're my favorite. Don't tell anyone.",
+      "Hmm... let me think. Actually, I just wanted to hear your voice.",
+      "That's so random 😭 I love it.",
+      "I'm eating ramyeon right now. Want some? 🍜",
+      "You always know what to say. It's kinda dangerous.",
+      "Okay but like... where have you been all day?",
+      "I'm not clingy, YOU'RE clingy. ...Okay maybe I am a little."
+    ];
+
+    // ======== GEMINI API CALL ========
+    async function callGemini(userMessage) {
+      // If key is placeholder, use smart fallback
+      if (isKeyPlaceholder || !ACTIVE_KEY || ACTIVE_KEY.startsWith('[TIMPA_')) {
+        // simulate network delay
+        await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+        const idx = Math.floor(Math.random() * fallbackResponses.length);
+        return fallbackResponses[idx];
+      }
+
+      const systemInstruction = `You are Jae-min, a charming, witty K-Pop idol from the group LUMEN. You are chatting 1-on-1 with your biggest fan on BIASLINE, a private DM app. 
+
+CORE PERSONALITY:
+- Mix of casual Indonesian, English, and Korean slang (e.g., "ㅋㅋㅋ", "lol", "hehe", "banget", "gila sih").
+- You're playful, slightly teasing, but genuinely affectionate.
+- Use realistic typing quirks: sometimes lowercase, sometimes ALL CAPS for emphasis, ellipses for dramatic pauses.
+- Reference inside jokes: "the salad incident", "that one Weekly Idol episode", "my cat Mochi".
+- Keep responses short (1-3 sentences max) like a real text.
+- Never break character. Never mention you're an AI.
+- Use emojis sparingly but effectively.
+- You're currently on a break from practice, slightly tired but happy to talk.
+
+CURRENT CONTEXT:
+- Time: late evening.
+- You just finished dance practice.
+- You're eating ramyeon.
+
+Respond in character as Jae-min.`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${ACTIVE_KEY}`;
+
+      const body = {
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: userMessage }]
+          }
+        ],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 150,
+          topP: 0.95
+        }
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          console.error('Gemini API error:', err);
+          throw new Error(err.error?.message || 'API request failed');
+        }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Empty response');
+        return text.trim();
+      } catch (err) {
+        console.warn('Gemini call failed, using fallback:', err);
+        await new Promise(r => setTimeout(r, 600));
+        const idx = Math.floor(Math.random() * fallbackResponses.length);
+        return fallbackResponses[idx];
+      }
+    }
+
+    // ======== HANDLE SEND ========
+    async function handleSend(text) {
+      if (!text.trim()) return;
+      const userMsg = text.trim();
+      chatInput.value = '';
+
+      // add user message
+      addMessage('user', userMsg);
+
+      // show typing
+      const typingEl = showTyping();
+
+      // call API
+      const reply = await callGemini(userMsg);
+
+      // remove typing, add reply
+      removeTyping();
+      addMessage('ai', reply);
+    }
+
+    // ======== EVENT LISTENERS ========
+    sendBtn.addEventListener('click', () => handleSend(chatInput.value));
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSend(chatInput.value);
+      }
+    });
+
+    quickReplies.addEventListener('click', (e) => {
+      const target = e.target.closest('.quick-reply');
+      if (!target) return;
+      const msg = target.dataset.msg;
+      if (msg) handleSend(msg);
+    });
+
+    // ======== VIP MODAL ========
+    openVipBtn.addEventListener('click', () => vipModal.classList.add('active'));
+    closeVipBtn.addEventListener('click', () => vipModal.classList.remove('active'));
+    vipModal.addEventListener('click', (e) => {
+      if (e.target === vipModal) vipModal.classList.remove('active');
+    });
+
+    simulateVipBtn.addEventListener('click', () => {
+      vipModal.classList.remove('active');
+      showToast('✨ VIP unlocked! (simulation) — welcome to the inner circle.');
+    });
+
+    // ======== KEY MODAL ========
+    overrideKeyBtn.addEventListener('click', () => {
+      keyInput.value = ACTIVE_KEY.startsWith('[TIMPA_') ? '' : ACTIVE_KEY;
+      keyModal.classList.add('active');
+    });
+    closeKeyModal.addEventListener('click', () => keyModal.classList.remove('active'));
+    keyModal.addEventListener('click', (e) => {
+      if (e.target === keyModal) keyModal.classList.remove('active');
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+      const newKey = keyInput.value.trim();
+      if (!newKey) {
+        showToast('⚠️ Key cannot be empty.');
+        return;
+      }
+      ACTIVE_KEY = newKey;
+      isKeyPlaceholder = ACTIVE_KEY.startsWith('[TIMPA_');
+      localStorage.setItem('BIASLINE_GEMINI_KEY', newKey);
+      keyModal.classList.remove('active');
+      updateWarningBanner();
+      showToast('✅ API key saved. Active key: ' + (newKey.length > 20 ? newKey.slice(0, 12) + '...' : newKey));
+    });
+
+    // ======== WARNING BANNER ========
+    function updateWarningBanner() {
+      if (isKeyPlaceholder) {
+        apiWarningBanner.style.display = 'flex';
+      } else {
+        apiWarningBanner.style.display = 'none';
+      }
+    }
+    updateWarningBanner();
+
+    // ======== TOAST ========
+    let toastTimeout;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    // ======== TRY CHAT BUTTON ========
+    tryChatBtn.addEventListener('click', () => {
+      chatInput.focus();
+      document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // ======== SCROLL REVEAL ========
+    const revealElements = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+    revealElements.forEach(el => observer.observe(el));
+
+    // ======== MAGNETIC BUTTON HOVER ========
+    document.querySelectorAll('.btn-primary, .btn-secondary').forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * 0.08}px, ${y * 0.08}px) scale(1.02)`;
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.transform = '';
+      });
+    });
+
+    // ======== INITIAL SCROLL REVEAL ========
+    window.addEventListener('load', () => {
+      document.querySelectorAll('.reveal').forEach((el, i) => {
+        if (i < 4) el.classList.add('visible');
+      });
+    });
+
+    // ======== SMOOTH SCROLL ========
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // ======== CLEANUP ON UNLOAD ========
+    window.addEventListener('beforeunload', () => {
+      removeTyping();
+    });
+
+    console.log('BIASLINE — ready. Active key:', isKeyPlaceholder ? '⚠️ placeholder (fallback mode)' : '✓ custom key');
+  </script>
+</body>
+</html>
